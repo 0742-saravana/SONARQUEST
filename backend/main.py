@@ -11,14 +11,14 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
-from ultralytics import YOLO
+from backend.onnx_yolo import YOLOOonnx
 
 # Project Base Directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
 STATIC_DIR = os.path.join(FRONTEND_DIR, 'static')
 SAMPLES_DIR = os.path.join(STATIC_DIR, 'samples')
-MODEL_PATH = os.path.join(BASE_DIR, 'backend', 'model_weights', 'best.pt')
+MODEL_PATH = os.path.join(BASE_DIR, 'backend', 'model_weights', 'marineguardv2.onnx')
 
 # Ensure sample directory exists
 os.makedirs(SAMPLES_DIR, exist_ok=True)
@@ -39,7 +39,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # Load MarineGuard AI PyTorch Model
 print(f"Loading PyTorch Model from: {MODEL_PATH}")
-model = YOLO(MODEL_PATH, task='detect')
+model = YOLOOonnx(MODEL_PATH)
 
 # Class mapping and Threat/Hazard Matrix
 CLASS_MAP = {
@@ -150,10 +150,10 @@ async def analyze_sonar_scan(
             despeckled_bgr = img_bgr.copy()
 
         # 3. Model Inference with ONNX MarineGuard
-        results = model.predict(source=despeckled_bgr, conf=confidence_threshold, verbose=False)
+     results = model.predict(despeckled_bgr, conf_thresh=confidence_threshold)
         
         # 4. Generate Visualizations
-        annotated_bgr = despeckled_bgr.copy()
+       annotated_bgr = model.plot(despeckled_bgr, results, CLASS_MAP)
         if len(results) > 0:
             annotated_bgr = results[0].plot()
 
@@ -165,10 +165,10 @@ async def analyze_sonar_scan(
         detections = []
 
         if len(results) > 0 and len(results[0].boxes) > 0:
-            for idx, box in enumerate(results[0].boxes):
-                bx, by, bw, bh = box.xywh[0].tolist()
-                conf = float(box.conf[0].item())
-                cls_id = int(box.cls[0].item())
+          for idx, box in enumerate(results):
+             bx, by, bw, bh = box["cx"], box["cy"], box["w"], box["h"]
+conf = box["conf"]
+cls_id = box["cls"]
 
                 class_info = CLASS_MAP.get(cls_id, {
                     "label": "Debris", "type": "debris", "hazard": "Medium"
