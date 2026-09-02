@@ -23,7 +23,7 @@ RUN mkdir -p backend/model_weights
 
 # IMPORTANT: Download the model from your GitHub Release
 # REPLACE THE URL BELOW with the actual raw download URL of your best.pt file from your NEW GitHub Releases
-RUN wget -qO backend/model_weights/best.pt "https://github.com/YOUR_GITHUB_USERNAME/YOUR_NEW_REPO_NAME/releases/download/YOUR_RELEASE_TAG/best.pt"
+RUN wget -qO backend/model_weights/best.pt "https://github.com/0742-saravana/SONARQUEST/releases/download/V2.0/best.pt"
 
 # Expose port 8080 for Cloud Run
 EXPOSE 8080
