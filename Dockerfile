@@ -1,13 +1,6 @@
 # Use an official Python runtime as a parent image
 FROM python:3.12-slim
 
-# Install system dependencies required by OpenCV and Ultralytics
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    wget \
-    && rm -rf /var/lib/apt/lists/*
-
 # Set the working directory
 WORKDIR /app
 
@@ -21,12 +14,11 @@ COPY . .
 # Create the model_weights directory
 RUN mkdir -p backend/model_weights
 
-# IMPORTANT: Download the model from your GitHub Release
-# REPLACE THE URL BELOW with the actual raw download URL of your best.pt file from your NEW GitHub Releases
-RUN wget -qO backend/model_weights/best.pt "https://github.com/0742-saravana/SONARQUEST/releases/download/V2.0/best.pt"
+# Download the model directly using Docker's ADD command (No apt-get or wget needed!)
+ADD "https://github.com/0742-saravana/SONARQUEST/releases/download/V2.0/best.pt" backend/model_weights/best.pt
 
-# Expose port 8080 for Cloud Run
+# Expose port 8080 for Cloud Run / Render
 EXPOSE 8080
 
-# Run the FastAPI server using the PORT environment variable provided by Cloud Run
+# Run the FastAPI server using the PORT environment variable
 CMD uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8080}
