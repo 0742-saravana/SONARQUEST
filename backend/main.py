@@ -37,8 +37,8 @@ app.add_middleware(
 # Mount Static Assets
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# Load MarineGuard AI PyTorch Model
-print(f"Loading PyTorch Model from: {MODEL_PATH}")
+# Load MarineGuard AI Pure ONNX Model
+print(f"Loading Pure ONNX Model from: {MODEL_PATH}")
 model = YOLOOonnx(MODEL_PATH)
 
 # Class mapping and Threat/Hazard Matrix
@@ -133,6 +133,7 @@ async def analyze_sonar_scan(
             if os.path.exists(sample_path):
                 img_bgr = cv2.imread(sample_path)
             else:
+                # Fallback to any sample if specific sample not found
                 samples = [f for f in os.listdir(SAMPLES_DIR) if f.endswith('.jpg')]
                 if samples:
                     img_bgr = cv2.imread(os.path.join(SAMPLES_DIR, samples[0]))
@@ -153,6 +154,7 @@ async def analyze_sonar_scan(
         
         # 4. Generate Visualizations
         annotated_bgr = model.plot(despeckled_bgr, results, CLASS_MAP)
+
         segmentation_bgr = create_segmentation_visual(despeckled_bgr)
 
         # 5. Extract Structured Detections & Geotags
@@ -165,88 +167,6 @@ async def analyze_sonar_scan(
                 bx, by, bw, bh = box["cx"], box["cy"], box["w"], box["h"]
                 conf = box["conf"]
                 cls_id = box["cls"]
-
-                class_info = CLASS_MAP.get(cls_id, {
-                    "label": "Debris", "type": "debris", "hazard": "Medium"
-                })
-
-                # Calculate Slant Range (meters from center nadir)
-                norm_x = (bx - (w / 2.0)) / (w / 2.0)
-                slant_range_m = round(abs(norm_x) * 60.0, 1)
-
-                # Geodetic projection offset
-                obj_lat = base_lat + ((by / h) - 0.5) * 0.008
-                obj_lon = base_lon + norm_x * 0.008
-
-                detections.append({
-                    "id": f"DET-{idx+1:02d}",
-                    "label": class_info["label"],
-                    "type": class_info["type"],
-                    "confidence": round(conf, 4),
-                    "hazard_level": class_info["hazard"],
-                    "slant_range_m": slant_range_m,
-                    "geotag": {
-                        "latitude": round(obj_lat, 6),
-                        "longitude": round(obj_lon, 6),
-                        "slant_range_m": slant_range_m
-                    }
-                })
-
-        snr_val = compute_snr(img_bgr)
-
-        payload = {
-            "annotated_image": img_to_base64(annotated_bgr),
-            "segmentation_image": img_to_base64(segmentation_bgr),
-            "despeckled_image": img_to_base64(despeckled_bgr),
-            "detections": detections,
-            "telemetry": {
-                "snr_db": round(snr_val, 1)
-            },
-            "mission_metadata": {
-                "mission_id": "SQ-ALPHA-2026",
-                "swath_width_m": 120.0,
-                "auv_start_coords": {
-                    "lat": base_lat,
-                    "lon": base_lon
-                }
-            }
-        }
-
-        return JSONResponse(content=payload)
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
-
-        h, w = img_bgr.shape[:2]
-
-        # 2. Preprocessing / Despeckling
-        if enable_despeckle:
-            despeckled_bgr = apply_despeckling_clahe(img_bgr)
-        else:
-            despeckled_bgr = img_bgr.copy()
-
-        # 3. Model Inference with ONNX MarineGuard
-     results = model.predict(despeckled_bgr, conf_thresh=confidence_threshold)
-        
-        # 4. Generate Visualizations
-       annotated_bgr = model.plot(despeckled_bgr, results, CLASS_MAP)
-        if len(results) > 0:
-            annotated_bgr = results[0].plot()
-
-        segmentation_bgr = create_segmentation_visual(despeckled_bgr)
-
-        # 5. Extract Structured Detections & Geotags
-        base_lat = 13.1500
-        base_lon = 80.6500
-        detections = []
-
-        if len(results) > 0 and len(results[0].boxes) > 0:
-          for idx, box in enumerate(results):
-             bx, by, bw, bh = box["cx"], box["cy"], box["w"], box["h"]
-conf = box["conf"]
-cls_id = box["cls"]
 
                 class_info = CLASS_MAP.get(cls_id, {
                     "label": "Debris", "type": "debris", "hazard": "Medium"
@@ -601,4 +521,3 @@ async def export_pdf(payload: Dict[str, Any] = Body(...)):
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=sonarquest_mission_report.pdf"}
     )
-
