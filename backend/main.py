@@ -13,7 +13,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from backend.onnx_yolo import YOLOOonnx
 
-# Project Base Directory
+# Project Base Directoryy
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
 STATIC_DIR = os.path.join(FRONTEND_DIR, 'static')
