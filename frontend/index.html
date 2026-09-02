@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SONARQUEST | AI Underwater Debris & Anomaly Detection System</title>
+    <!-- Fresh, Clean Modern Fonts (Inter & Plus Jakarta Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS for Seafloor Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/static/style.css?v=2.0">
+</head>
+<body class="fresh-theme">
+    
+    <!-- Top Navigation -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand" id="nav-go-home">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-water"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">SONAR<strong>QUEST</strong></span>
+                    <span class="brand-badge">Marine Sonar Vision</span>
+                </div>
+            </div>
+
+            <nav class="nav-links">
+                <button class="nav-link-btn active" id="btn-nav-landing">Problem & Architecture</button>
+                <button class="nav-link-btn" id="btn-nav-workspace">Detection Workspace</button>
+            </nav>
+
+            <div class="nav-actions">
+                <button class="btn btn-primary" id="btn-header-start">
+                    <i class="fa-solid fa-crosshairs"></i> Launch Detection
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- VIEW 1: LANDING PAGE -->
+    <section id="view-landing" class="view-section active">
+        
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <div class="hero-container">
+                <div class="hero-tag">
+                    <i class="fa-solid fa-shield-halved text-blue"></i>
+                    <span>National Marine Debris & Anomaly Detection Initiative</span>
+                </div>
+                <h1 class="hero-title">AI-Powered Automated Underwater Debris & Anomaly Detection System</h1>
+                <p class="hero-subtitle">
+                    Automating Side-Scan Sonar (SSS) acoustic inspection to accurately detect, segment, and geotag hazardous man-made debris, ghost nets, shipwrecks, and subsea pipelines against complex natural seafloors.
+                </p>
+                <div class="hero-btn-group">
+                    <button class="btn btn-primary btn-lg" id="btn-hero-launch">
+                        <i class="fa-solid fa-microchip"></i> Open Detection Workspace &rarr;
+                    </button>
+                    <button class="btn btn-outline btn-lg" id="btn-hero-sample">
+                        <i class="fa-solid fa-play"></i> Try Sample Sonar Scan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Problem Statement & Core Components Breakdown -->
+        <div class="info-section">
+            <div class="section-container">
+                
+                <div class="section-header">
+                    <span class="section-pill">System Overview</span>
+                    <h2>Four Core System Pillars</h2>
+                    <p>Designed to overcome high acoustic speckle noise, varying resolutions, and acoustic shadows in seafloor logs.</p>
+                </div>
+
+                <div class="pillar-grid">
+                    
+                    <div class="pillar-card">
+                        <div class="pillar-icon bg-blue">
+                            <i class="fa-solid fa-draw-polygon"></i>
+                        </div>
+                        <h3>1. Object Detection / Segmentation Model</h3>
+                        <p>AI/ML architecture (YOLOv8-seg, Faster R-CNN, U-Net) trained to identify and draw precision bounding boxes and masks around man-made hazards including ghost nets, shipwrecks, subsea pipes, and metallic cylinders.</p>
+                    </div>
+
+                    <div class="pillar-card">
+                        <div class="pillar-icon bg-amber">
+                            <i class="fa-solid fa-filter"></i>
+                        </div>
+                        <h3>2. Confidence Scoring & Noise Filtering</h3>
+                        <p>An algorithmic pre-processing pipeline featuring Lee Despeckling and acoustic highlight-shadow analysis that minimizes false alarms caused by natural sand ripples and rock clusters, generating calibrated 0% to 100% confidence scores.</p>
+                    </div>
+
+                    <div class="pillar-card">
+                        <div class="pillar-icon bg-green">
+                            <i class="fa-solid fa-location-dot"></i>
+                        </div>
+                        <h3>3. Anomalous Reporting & Geotagging</h3>
+                        <p>Translates acoustic slant-range coordinates and AUV ping headers into global geodetic Latitude/Longitude coordinates (WGS84). Generates structured CSV and JSON inspection manifests detailing exact locations and target dimensions.</p>
+                    </div>
+
+                    <div class="pillar-card">
+                        <div class="pillar-icon bg-purple">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                        <h3>4. Operational UI Dashboard</h3>
+                        <p>Clean, interactive visual interface where users can upload raw sonar logs, inspect detections with bounding boxes on the seafloor map in real-time, and download annotated JPG images and CSV anomaly reports.</p>
+                    </div>
+
+                </div>
+
+                <!-- 6-Stage Workflow Summary Banner -->
+                <div class="workflow-summary-card">
+                    <div class="wf-header">
+                        <h3><i class="fa-solid fa-diagram-project text-blue"></i> End-to-End Processing Workflow</h3>
+                        <span>From Raw Sonar Data &rarr; AI Detection &rarr; Geotagging &rarr; Actionable Reports</span>
+                    </div>
+                    <div class="wf-steps-row">
+                        <div class="wf-step">
+                            <span class="wf-num">01</span>
+                            <strong>Data Ingestion</strong>
+                            <small>PNG / TIFF / JSF</small>
+                        </div>
+                        <div class="wf-sep">&rarr;</div>
+                        <div class="wf-step">
+                            <span class="wf-num">02</span>
+                            <strong>Preprocessing</strong>
+                            <small>Noise Despeckling</small>
+                        </div>
+                        <div class="wf-sep">&rarr;</div>
+                        <div class="wf-step">
+                            <span class="wf-num">03</span>
+                            <strong>AI Detection</strong>
+                            <small>YOLOv8 Bounding Boxes</small>
+                        </div>
+                        <div class="wf-sep">&rarr;</div>
+                        <div class="wf-step">
+                            <span class="wf-num">04</span>
+                            <strong>Confidence Gate</strong>
+                            <small>Shadow Validation</small>
+                        </div>
+                        <div class="wf-sep">&rarr;</div>
+                        <div class="wf-step">
+                            <span class="wf-num">05</span>
+                            <strong>Geotagging</strong>
+                            <small>Lat/Long Mapping</small>
+                        </div>
+                        <div class="wf-sep">&rarr;</div>
+                        <div class="wf-step">
+                            <span class="wf-num">06</span>
+                            <strong>Reports Export</strong>
+                            <small>JPG & CSV Downloads</small>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </section>
+
+    <!-- VIEW 2: DETECTION WORKSPACE -->
+    <section id="view-workspace" class="view-section">
+        
+        <div class="workspace-header">
+            <div class="workspace-header-container">
+                <div>
+                    <h2>Sonar Detection & Geotagging Console</h2>
+                    <p>Upload a raw Side-Scan Sonar (SSS) image or select a sample mission to generate detections and downloadable reports.</p>
+                </div>
+                <div class="workspace-top-actions">
+                    <button class="btn btn-outline" id="btn-back-to-landing">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Overview
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="workspace-container">
+            
+            <!-- Left Controls Column -->
+            <aside class="control-sidebar">
+                
+                <!-- Card 1: Ingestion & Upload -->
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fa-solid fa-cloud-arrow-up text-blue"></i>
+                        <h3>1. Ingest Sonar Log</h3>
+                    </div>
+
+                    <!-- Preset dropdown -->
+                    <div class="form-group">
+                        <label for="sample-select">Sample Survey Mission Presets:</label>
+                        <select id="sample-select" class="form-select">
+                            <option value="">-- Choose Sample Survey Log --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-divider"><span>OR UPLOAD CUSTOM SCAN</span></div>
+
+                    <!-- Drag & Drop Zone -->
+                    <div class="dropzone" id="drop-zone">
+                        <input type="file" id="file-input" accept="image/*" class="file-input-hidden">
+                        <div class="dropzone-body">
+                            <i class="fa-solid fa-file-image dropzone-icon text-blue"></i>
+                            <p class="dropzone-text">Drag & drop Sonar Image or <span class="text-blue underline">browse</span></p>
+                            <span class="dropzone-hint">Supports PNG, JPG, TIFF (Dual-Swath SSS)</span>
+                        </div>
+                    </div>
+
+                    <div id="selected-file-info" class="file-chip hidden">
+                        <i class="fa-solid fa-check text-green"></i>
+                        <span id="file-name-display">sonar_image.jpg</span>
+                        <button class="btn-clear" id="btn-clear-file"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+
+                <!-- Card 2: AI Sensitivity & Noise Filters -->
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fa-solid fa-sliders text-amber"></i>
+                        <h3>2. Confidence & Noise Filters</h3>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="slider-label-row">
+                            <label for="confidence-range">Confidence Threshold:</label>
+                            <span class="slider-badge" id="conf-val">60%</span>
+                        </div>
+                        <input type="range" id="confidence-range" min="10" max="95" value="60" class="clean-slider">
+                    </div>
+
+                    <div class="toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="despeckle-toggle" checked>
+                            <span class="slider-round"></span>
+                        </label>
+                        <div class="switch-labels">
+                            <strong>Lee Despeckling Filter</strong>
+                            <span>Suppresses speckle noise & acoustic backscatter</span>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-block btn-lg" id="btn-run-analysis">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Detection Pipeline
+                    </button>
+                </div>
+
+                <!-- Card 3: Download Reports Section -->
+                <div class="card download-card">
+                    <div class="card-title">
+                        <i class="fa-solid fa-download text-green"></i>
+                        <h3>3. Download Action Reports</h3>
+                    </div>
+                    <p class="card-note">Download detection results with bounding boxes (JPG) and geotagged coordinate metadata (CSV).</p>
+                    
+                    <div class="download-button-stack">
+                        <!-- 1. Download Boxed Image (JPG) -->
+                        <button class="btn btn-download btn-download-jpg" id="btn-download-jpg" disabled>
+                            <i class="fa-solid fa-file-image"></i>
+                            <div class="btn-text-block">
+                                <strong>Download Boxed Image (.JPG)</strong>
+                                <span>Image with AI bounding boxes & labels</span>
+                            </div>
+                        </button>
+
+                        <!-- 2. Download CSV Metadata Report -->
+                        <button class="btn btn-download btn-download-csv" id="btn-download-csv" disabled>
+                            <i class="fa-solid fa-file-csv"></i>
+                            <div class="btn-text-block">
+                                <strong>Download Metadata Report (.CSV)</strong>
+                                <span>Latitude, Longitude, Dimensions & Classification</span>
+                            </div>
+                        </button>
+
+                        <!-- 3. Download JSON Manifest -->
+                        <button class="btn btn-download btn-download-json" id="btn-download-json" disabled>
+                            <i class="fa-solid fa-file-code"></i>
+                            <div class="btn-text-block">
+                                <strong>Download Full Manifest (.JSON)</strong>
+                                <span>IHO S-44 compliant inspection structure</span>
+                            </div>
+                        </button>
+
+                        <!-- 4. Download PDF Executive Mission Report -->
+                        <button class="btn btn-download btn-download-pdf" id="btn-download-pdf" disabled style="border-color: #ef4444;">
+                            <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i>
+                            <div class="btn-text-block">
+                                <strong>Download Mission Report (.PDF)</strong>
+                                <span>Executive summary with sonar map & hazard log</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+            </aside>
+
+            <!-- Main Center / Right Workspace -->
+            <main class="viewport-workspace">
+                
+                <!-- Top View Mode Toolbar -->
+                <div class="viewport-toolbar">
+                    <div class="tab-pill-group" id="view-mode-tabs">
+                        <button class="tab-pill active" data-mode="annotated">
+                            <i class="fa-solid fa-vector-square"></i> Boxed Detection Result
+                        </button>
+                        <button class="tab-pill" data-mode="segmentation">
+                            <i class="fa-solid fa-highlighter"></i> Highlight & Shadow (AHS)
+                        </button>
+                        <button class="tab-pill" data-mode="despeckled">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Despeckled Sonar
+                        </button>
+                        <button class="tab-pill" data-mode="raw">
+                            <i class="fa-solid fa-water"></i> Raw SSS
+                        </button>
+                    </div>
+
+                    <div class="viewport-meta-badges">
+                        <span class="meta-pill"><i class="fa-solid fa-arrows-left-right"></i> Swath: 120m</span>
+                        <span class="meta-pill" id="snr-badge"><i class="fa-solid fa-wave-square"></i> SNR: -- dB</span>
+                    </div>
+                </div>
+
+                <!-- Sonar Viewport Frame -->
+                <div class="sonar-frame">
+                    <div class="nadir-guide">
+                        <span>NADIR WATER COLUMN (BLIND ZONE)</span>
+                    </div>
+                    <div class="swath-label swath-left">PORT SWATH (CH-A)</div>
+                    <div class="swath-label swath-right">STARBOARD SWATH (CH-B)</div>
+
+                    <div class="sonar-canvas-container" id="image-container">
+                        <!-- Empty State -->
+                        <div class="empty-state" id="empty-state">
+                            <div class="empty-icon-circle">
+                                <i class="fa-solid fa-radar fa-2x text-blue"></i>
+                            </div>
+                            <h3>No Sonar Log Loaded</h3>
+                            <p>Upload a Side-Scan Sonar image or load a sample mission to generate bounding boxes and geotagged reports.</p>
+                            <button class="btn btn-outline" id="btn-load-sample-hero">
+                                <i class="fa-solid fa-play"></i> Load Sample Sonar Mission
+                            </button>
+                        </div>
+
+                        <img id="sonar-display-img" class="sonar-img hidden" alt="Sonar Waterfall Scan">
+
+                        <!-- Loading State -->
+                        <div id="loading-overlay" class="loading-overlay hidden">
+                            <div class="spinner"></div>
+                            <p id="loading-message">Analyzing Acoustic Highlights, Fitting Bounding Boxes & Geotagging...</p>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Status Bar -->
+                    <div class="frame-statusbar">
+                        <span id="hud-coords"><i class="fa-regular fa-compass"></i> Cursor: X: --- px | Y: --- px | Range: -- m</span>
+                        <span id="hud-det-count" class="text-blue font-semibold">0 Hazards Detected</span>
+                    </div>
+                </div>
+
+                <!-- Interactive Map & Detection Table Row -->
+                <div class="results-bottom-grid">
+                    
+                    <!-- Geotagged Seafloor Map -->
+                    <div class="card map-card">
+                        <div class="card-title">
+                            <i class="fa-solid fa-map-location-dot text-blue"></i>
+                            <h3>Geotagged Seafloor Map (WGS84 Coordinates)</h3>
+                        </div>
+                        <div id="seafloor-map" class="map-viewport"></div>
+                        <div class="map-legend">
+                            <span class="legend-dot"><span class="dot red"></span> Ghost Net</span>
+                            <span class="legend-dot"><span class="dot orange"></span> Shipwreck</span>
+                            <span class="legend-dot"><span class="dot green"></span> Pipe / Cylinder</span>
+                            <span class="legend-dot"><span class="dot purple"></span> Debris</span>
+                        </div>
+                    </div>
+
+                    <!-- Detected Hazards Summary Table -->
+                    <div class="card table-card">
+                        <div class="card-title">
+                            <i class="fa-solid fa-table-list text-green"></i>
+                            <h3>Detected Objects & Metadata Registry</h3>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Classification</th>
+                                        <th>Confidence</th>
+                                        <th>Severity</th>
+                                        <th>Slant Range</th>
+                                        <th>GPS (Lat, Long)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detection-table-body">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">No detections yet. Run analysis to populate metadata.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+            </main>
+
+        </div>
+
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <span>SONARQUEST &copy; 2026 | AI-Powered Underwater Debris Detection & Geotagging System</span>
+            <span>Side-Scan Sonar (SSS) Computer Vision Pipeline</span>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS & App Logic -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/static/app.js?v=2.0"></script>
+</body>
+</html>

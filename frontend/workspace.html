@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SONARQUESTV2 | Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { primary: '#0ea5e9', secondary: '#0284c7', dark: '#0f172a', surface: '#1e293b' },
+                    fontFamily: { sans: ['Space Grotesk', 'sans-serif'], mono: ['Fira Code', 'monospace'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .threat-critical { color: #ef4444; background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; }
+        .threat-high { color: #f97316; background: rgba(249, 115, 22, 0.1); border: 1px solid #f97316; }
+        .threat-medium { color: #eab308; background: rgba(234, 179, 8, 0.1); border: 1px solid #eab308; }
+        .threat-low { color: #22c55e; background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; }
+        #loading { display: none; }
+        #results-dashboard { display: none; }
+        
+        .animated-bg-container {
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .animated-bg-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070&auto=format&fit=crop'); /* Reef image */
+            background-size: cover;
+            background-position: center;
+            transform: scale(1.1);
+            animation: panBg 40s linear infinite alternate;
+            z-index: 0;
+        }
+        .animated-bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(15,23,42,0.8), rgba(15,23,42,0.95));
+            z-index: 1;
+        }
+        @keyframes panBg {
+            0% { transform: scale(1.15) translate(0%, 0%); }
+            100% { transform: scale(1.15) translate(-3%, 2%); }
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-primary selection:text-white min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="w-full z-50 glass shadow-md border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2 text-primary font-bold text-xl tracking-tight hover:text-white transition-colors">
+                <span class="material-symbols-outlined">radar</span> SONARQUESTV2
+            </a>
+            <div class="flex items-center gap-4">
+                <span class="text-xs font-mono px-2 py-1 bg-surface rounded text-slate-300">OpenCV CLAHE</span>
+                <span class="text-xs font-mono px-2 py-1 bg-primary/20 text-primary border border-primary/30 rounded">MarineGuard AI (ONNX)</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow">
+        <!-- Detection Upload Section -->
+        <section class="py-20 px-6 animated-bg-container">
+            <div class="animated-bg-overlay"></div>
+            
+            <div class="max-w-3xl mx-auto text-center relative z-10 pt-8 pb-12">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary text-primary text-xs font-bold mb-6 uppercase tracking-widest">
+                    <span class="material-symbols-outlined text-[14px]">sensors</span> Sonar Array
+                </div>
+                
+                <h2 class="text-3xl md:text-4xl font-bold mb-8 text-white drop-shadow-lg">Initiate Deep Scan</h2>
+                
+                <div class="glass p-10 rounded-2xl border-dashed border-2 border-slate-400/50 hover:border-primary transition-all cursor-pointer relative shadow-2xl backdrop-blur-xl" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                    <div class="flex flex-col items-center justify-center gap-4">
+                        <span class="material-symbols-outlined text-5xl text-primary drop-shadow-md">upload_file</span>
+                        
+                        <div>
+                            <h3 class="text-xl font-semibold text-white">Drag & Drop Sonar Log</h3>
+                            <p class="text-sm text-slate-300 mt-1">or click to browse local files</p>
+                        </div>
+                        
+                        <div class="flex gap-4 mt-4 opacity-80">
+                            <span class="text-xs font-mono bg-slate-800/80 px-3 py-1.5 rounded-md border border-slate-600 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">image</span> FORMAT: .JPG, .PNG
+                            </span>
+                            <span class="text-xs font-mono bg-slate-800/80 px-3 py-1.5 rounded-md border border-slate-600 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">sd_card</span> MAX SIZE: 15MB
+                            </span>
+                        </div>
+                    </div>
+                    <input type="file" id="fileInput" class="hidden" accept=".jpg,.jpeg,.png">
+                </div>
+
+                <!-- File Selected Confirmation (Hidden by default) -->
+                <div id="fileSelectedConfirm" class="hidden mt-8 flex flex-col items-center gap-5">
+                    <div class="glass px-6 py-3 rounded-xl flex items-center gap-3 border-green-500/50 bg-green-500/10">
+                        <span class="material-symbols-outlined text-green-400">check_circle</span>
+                        <span class="text-slate-300 text-sm">Selected:</span>
+                        <span id="selectedFileName" class="text-white font-mono text-sm font-bold"></span>
+                    </div>
+                    <button id="btnInitiateScan" class="bg-primary hover:bg-secondary text-white px-10 py-4 rounded-xl font-bold shadow-lg shadow-primary/30 transition-all flex items-center gap-3 active:scale-95">
+                        <span class="material-symbols-outlined text-xl">radar</span> INITIATE SCAN
+                    </button>
+                    <button id="btnCancelScan" class="text-slate-400 hover:text-white text-xs underline mt-2">
+                        Cancel and select another file
+                    </button>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="loading" class="mt-8 flex flex-col items-center gap-3">
+                    <span class="material-symbols-outlined text-primary text-5xl animate-spin drop-shadow-lg">autorenew</span>
+                    <p class="text-sm font-mono text-white bg-slate-900/80 px-4 py-2 rounded-full border border-slate-700 shadow-xl">Applying CLAHE Filter & Running ONNX Inference...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Dashboard -->
+        <section id="results-dashboard" class="py-10 px-6 bg-dark border-t border-slate-800">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-wrap items-center justify-between mb-8 pb-4 border-b border-slate-700 gap-4">
+                    <h2 class="text-2xl font-bold flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary">dashboard</span> Mission Report
+                    </h2>
+                    
+                    <div class="flex gap-3">
+                        <a id="btnExportImage" href="#" target="_blank" class="bg-surface hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors text-sm border border-slate-600">
+                            <span class="material-symbols-outlined text-sm">image</span> Image
+                        </a>
+                        <a id="btnExportCSV" href="#" target="_blank" class="bg-surface hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors text-sm border border-slate-600">
+                            <span class="material-symbols-outlined text-sm">table</span> CSV
+                        </a>
+                        <a id="btnExportJSON" href="#" target="_blank" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors text-sm">
+                            <span class="material-symbols-outlined text-sm">code</span> JSON Payload
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Telemetry Widgets -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="glass p-4 rounded-xl flex flex-col justify-center items-center">
+                        <span class="text-xs font-mono text-slate-400 mb-1">SYSTEM STATUS</span>
+                        <span class="text-xl font-bold text-primary flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span> ONLINE</span>
+                    </div>
+                    <div class="glass p-4 rounded-xl flex flex-col justify-center items-center">
+                        <span class="text-xs font-mono text-slate-400 mb-1">SCAN AREA</span>
+                        <span class="text-xl font-bold text-white">0.45 km²</span>
+                    </div>
+                    <div class="glass p-4 rounded-xl flex flex-col justify-center items-center">
+                        <span class="text-xs font-mono text-slate-400 mb-1">AVG CONFIDENCE</span>
+                        <span id="avgConfidence" class="text-xl font-bold text-white">--%</span>
+                    </div>
+                    <div class="glass p-4 rounded-xl flex flex-col justify-center items-center">
+                        <span class="text-xs font-mono text-slate-400 mb-1">HIGHEST THREAT</span>
+                        <span id="maxThreat" class="text-xl font-bold text-white">--</span>
+                    </div>
+                </div>
+
+                <!-- Top Row: Images (Reduced Size) -->
+                <div class="grid lg:grid-cols-2 gap-8 mb-8">
+                    <div class="glass p-4 rounded-xl">
+                        <h3 class="text-xs font-mono text-slate-400 mb-3 flex justify-between">
+                            <span>INPUT LOG (OpenCV CLAHE Filtered)</span>
+                        </h3>
+                        <div class="w-full h-48 md:h-64 flex justify-center items-center bg-black/30 rounded border border-slate-700 overflow-hidden">
+                            <img id="filteredImage" src="" class="max-w-full max-h-full object-contain" alt="Filtered Image">
+                        </div>
+                    </div>
+                    <div class="glass p-4 rounded-xl relative">
+                        <h3 class="text-xs font-mono text-primary mb-3">MARINEGUARD AI DETECTIONS</h3>
+                        <div class="w-full h-48 md:h-64 flex justify-center items-center bg-black/30 rounded border border-primary/30 overflow-hidden shadow-[0_0_15px_rgba(14,165,233,0.15)]">
+                            <img id="resultImage" src="" class="max-w-full max-h-full object-contain" alt="Result Image">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: Table & Map (Reduced Size Map) -->
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <!-- Data Table -->
+                    <div class="lg:col-span-2 glass p-5 rounded-xl overflow-hidden flex flex-col">
+                        <h3 class="text-base font-bold mb-4 flex justify-between items-center gap-2">
+                            <span class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-base">table_view</span> Generated CSV Data Preview</span>
+                            <span id="anomalyCount" class="text-xs bg-slate-700 px-2 py-1 rounded">0</span>
+                        </h3>
+                        <div class="overflow-x-auto flex-1 max-h-64">
+                            <table class="w-full text-left border-collapse whitespace-nowrap">
+                                <thead>
+                                    <tr class="text-xs font-mono text-slate-400 border-b border-slate-700">
+                                        <th class="pb-2 pr-3 sticky top-0 bg-slate-800/90 backdrop-blur z-10">ID</th>
+                                        <th class="pb-2 pr-3 sticky top-0 bg-slate-800/90 backdrop-blur z-10">CLASS_NAME</th>
+                                        <th class="pb-2 pr-3 sticky top-0 bg-slate-800/90 backdrop-blur z-10">THREAT_LEVEL</th>
+                                        <th class="pb-2 pr-3 sticky top-0 bg-slate-800/90 backdrop-blur z-10">CONFIDENCE</th>
+                                        <th class="pb-2 pr-3 sticky top-0 bg-slate-800/90 backdrop-blur z-10">LAT, LON</th>
+                                        <th class="pb-2 sticky top-0 bg-slate-800/90 backdrop-blur z-10">BBOX (X,Y,W,H)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody" class="text-sm">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Live Map (Reduced Size) -->
+                    <div class="lg:col-span-1 glass p-5 rounded-xl flex flex-col">
+                        <h3 class="text-base font-bold mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-base">public</span> Live Tracking
+                        </h3>
+                        <div id="map" class="w-full aspect-square rounded-lg border border-slate-700 flex-1 z-10"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-6 text-center text-slate-500 text-xs mt-auto">
+        <p>&copy; 2026 SONARQUESTV2. MarineGuard AI Edge Implementation.</p>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const dropzone = document.getElementById('dropzone');
+        const fileSelectedConfirm = document.getElementById('fileSelectedConfirm');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const btnInitiateScan = document.getElementById('btnInitiateScan');
+        const btnCancelScan = document.getElementById('btnCancelScan');
+        
+        const loading = document.getElementById('loading');
+        const resultsDashboard = document.getElementById('results-dashboard');
+        
+        let currentMap = null;
+        let stagedFile = null;
+
+        // Drag & Drop Handlers
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('border-primary', 'bg-primary/5');
+        });
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('border-primary', 'bg-primary/5');
+        });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-primary', 'bg-primary/5');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                stageFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Click Handler
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                stageFile(e.target.files[0]);
+            }
+        });
+
+        // Stage File for Scan
+        function stageFile(file) {
+            if (!file) return;
+            stagedFile = file;
+            selectedFileName.innerText = file.name;
+            dropzone.style.display = 'none';
+            fileSelectedConfirm.style.display = 'flex';
+        }
+
+        // Cancel Staged File
+        btnCancelScan.addEventListener('click', () => {
+            stagedFile = null;
+            fileInput.value = '';
+            fileSelectedConfirm.style.display = 'none';
+            dropzone.style.display = 'block';
+        });
+
+        // Initiate Scan Click
+        btnInitiateScan.addEventListener('click', () => {
+            if (stagedFile) {
+                handleUpload(stagedFile);
+            }
+        });
+
+        // API Upload Function
+        async function handleUpload(file) {
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append("file", file);
+
+            fileSelectedConfirm.style.display = 'none';
+            loading.style.display = 'flex';
+            resultsDashboard.style.display = 'none';
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error("Processing failed");
+                const resData = await response.json();
+                
+                populateDashboard(resData);
+                
+            } catch (error) {
+                alert("Error analyzing sonar log: " + error.message);
+                dropzone.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+                dropzone.style.display = 'block';
+            }
+        }
+
+        function populateDashboard(res) {
+            const data = res.data;
+            resultsDashboard.style.display = 'block';
+            resultsDashboard.scrollIntoView({ behavior: 'smooth' });
+
+            // Set Images
+            document.getElementById('filteredImage').src = data.source_image;
+            document.getElementById('resultImage').src = data.result_image;
+            
+            // Set Stats
+            document.getElementById('anomalyCount').innerText = `${data.anomaly_count} Found`;
+            
+            // Set Export Links
+            document.getElementById('btnExportImage').href = data.result_image;
+            document.getElementById('btnExportCSV').href = res.csv_report;
+            document.getElementById('btnExportJSON').href = res.json_report;
+
+            // Populate Table and calculate telemetry
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            if(data.detections.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-500 font-mono text-xs">No anomalies detected in sector.</td></tr>`;
+                document.getElementById('avgConfidence').innerText = '0%';
+                document.getElementById('maxThreat').innerText = 'NONE';
+                document.getElementById('maxThreat').className = 'text-xl font-bold text-white';
+            } else {
+                let totalConf = 0;
+                let highestThreatRank = -1;
+                let highestThreatLevel = 'LOW';
+                
+                const threatRanks = {'LOW': 0, 'MEDIUM': 1, 'HIGH': 2, 'CRITICAL': 3};
+                const threatColors = {'LOW': 'text-green-500', 'MEDIUM': 'text-yellow-500', 'HIGH': 'text-orange-500', 'CRITICAL': 'text-red-500'};
+
+                data.detections.forEach(det => {
+                    totalConf += det.confidence;
+                    
+                    if (threatRanks[det.threat_level] > highestThreatRank) {
+                        highestThreatRank = threatRanks[det.threat_level];
+                        highestThreatLevel = det.threat_level;
+                    }
+
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-slate-700/50 hover:bg-slate-800/50 transition-colors";
+                    
+                    let threatBadge = `threat-${det.threat_level.toLowerCase()}`;
+                    
+                    tr.innerHTML = `
+                        <td class="py-2 pr-3 font-mono text-xs text-slate-400">#${det.id}</td>
+                        <td class="py-2 pr-3 font-bold text-white text-xs">${det.class_name}</td>
+                        <td class="py-2 pr-3">
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-widest ${threatBadge}">
+                                ${det.threat_level}
+                            </span>
+                        </td>
+                        <td class="py-2 pr-3 font-mono text-primary text-xs">${(det.confidence * 100).toFixed(1)}%</td>
+                        <td class="py-2 pr-3 font-mono text-slate-400 text-[10px]">${det.geotag.latitude}, ${det.geotag.longitude}</td>
+                        <td class="py-2 font-mono text-slate-500 text-[10px]">[${det.bbox.x}, ${det.bbox.y}, ${det.bbox.w}, ${det.bbox.h}]</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                document.getElementById('avgConfidence').innerText = `${((totalConf / data.detections.length) * 100).toFixed(1)}%`;
+                document.getElementById('maxThreat').innerText = highestThreatLevel;
+                document.getElementById('maxThreat').className = `text-xl font-bold ${threatColors[highestThreatLevel]}`;
+            }
+
+            // Init/Update Map
+            initMap(data.detections);
+        }
+
+        function initMap(detections) {
+            if (currentMap !== null) {
+                currentMap.remove();
+            }
+
+            // Center map (Default: Great Barrier Reef)
+            let centerLat = -18.2871;
+            let centerLon = 147.6992;
+            if(detections.length > 0) {
+                centerLat = detections[0].geotag.latitude;
+                centerLon = detections[0].geotag.longitude;
+            }
+
+            currentMap = L.map('map').setView([centerLat, centerLon], 15);
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri'
+            }).addTo(currentMap);
+
+            detections.forEach(det => {
+                let color = det.threat_level === 'CRITICAL' || det.threat_level === 'HIGH' ? '#ef4444' : '#eab308';
+                
+                L.circleMarker([det.geotag.latitude, det.geotag.longitude], {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.6,
+                    radius: 6
+                }).addTo(currentMap)
+                .bindPopup(`<div class="font-sans text-xs">
+                    <strong style="color:${color}">${det.class_name}</strong><br>
+                    Threat: ${det.threat_level}<br>
+                    Conf: ${(det.confidence * 100).toFixed(1)}%
+                </div>`);
+            });
+            
+            // force invalidate size in case container size changed
+            setTimeout(() => { currentMap.invalidateSize(); }, 100);
+        }
+    </script>
+</body>
+</html>
