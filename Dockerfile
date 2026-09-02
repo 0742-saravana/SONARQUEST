@@ -8,13 +8,18 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Ultralytics automatically installs the GUI version of opencv-python.
+# We must uninstall it and force the headless version so we don't need libxcb or libgl1 system libraries.
+RUN pip uninstall -y opencv-python opencv-python-headless && \
+    pip install --no-cache-dir opencv-python-headless>=4.9.0
+
 # Copy the rest of the application
 COPY . .
 
 # Create the model_weights directory
 RUN mkdir -p backend/model_weights
 
-# Download the model directly using Docker's ADD command (No apt-get or wget needed!)
+# Download the model directly using Docker's ADD command
 ADD "https://github.com/0742-saravana/SONARQUEST/releases/download/V2.0/best.pt" backend/model_weights/best.pt
 
 # Expose port 8080 for Cloud Run / Render
